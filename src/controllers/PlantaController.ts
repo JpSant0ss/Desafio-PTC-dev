@@ -1,0 +1,71 @@
+import { Request, Response } from "express";
+import * as PlantaRepository from "@repositories/PlantaRepository";
+
+const LUMINOSIDADES = ["SOMBRA", "MEIA_SOMBRA", "SOL_PLENO"];
+
+//valida os dados recebidos, retorna null caso de certo ou mensagem de erro no oposto
+const validarPlanta = (dados: any, exigirTodos: boolean): string | null => {
+  const campos = ["nome", "especie", "preco", "estoque", "luminosidade", "petFriendly", "regaACadaDias"];
+
+  if (exigirTodos) {
+    for (const campo of campos) {
+      if (dados[campo] === undefined) return `O campo ${campo} é obrigatório.`;
+    }
+  }
+
+  const { nome, especie, preco, estoque, luminosidade, petFriendly, regaACadaDias } = dados;
+
+  if (nome !== undefined && (typeof nome !== "string" || nome.trim() === "")) {
+    return "nome deve ser um texto não vazio.";
+  }
+  if (especie !== undefined && (typeof especie !== "string" || especie.trim() === "")) {
+    return "especie deve ser um texto não vazio.";
+  }
+  if (preco !== undefined && (!Number.isInteger(preco) || preco <= 0)) {
+    return "preco deve ser um inteiro maior que zero (em centavos).";
+  }
+  // estoque pode ser 0, só não pode ser negativo
+  if (estoque !== undefined && (!Number.isInteger(estoque) || estoque < 0)) {
+    return "estoque deve ser um inteiro maior ou igual a zero.";
+  }
+  if (luminosidade !== undefined && !LUMINOSIDADES.includes(luminosidade)) {
+    return "luminosidade deve ser SOMBRA, MEIA_SOMBRA ou SOL_PLENO.";
+  }
+  if (petFriendly !== undefined && typeof petFriendly !== "boolean") {
+    return "petFriendly deve ser true ou false.";
+  }
+  if (regaACadaDias !== undefined && (!Number.isInteger(regaACadaDias) || regaACadaDias < 1)) {
+    return "regaACadaDias deve ser um inteiro maior ou igual a 1.";
+  }
+
+  return null;
+};
+
+export const createPlanta = async (req: Request, res: Response) => {
+  try {
+    const dados = req.body ?? {};
+
+    // 400 bad request: dados faltando ou inválidos
+    const erro = validarPlanta(dados, true);
+    if (erro) {
+      return res.status(400).json({ message: erro });
+    }
+
+    //vai de campo em campo para não conseguir enviar id, createdAt... sem sobrescrever o banco
+    const planta = await PlantaRepository.createPlanta({
+      nome: dados.nome,
+      especie: dados.especie,
+      preco: dados.preco,
+      estoque: dados.estoque,
+      luminosidade: dados.luminosidade,
+      petFriendly: dados.petFriendly,
+      regaACadaDias: dados.regaACadaDias,
+    });
+
+    // 201 created: algo novo foi criado
+    return res.status(201).json(planta);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao criar planta." });
+  }
+};
