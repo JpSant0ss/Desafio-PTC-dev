@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Luminosidade, Prisma } from "@prisma/client";
 import * as PlantaRepository from "@repositories/PlantaRepository";
 
 const LUMINOSIDADES = ["SOMBRA", "MEIA_SOMBRA", "SOL_PLENO"];
@@ -78,7 +79,28 @@ export const createPlanta = async (req: Request, res: Response) => {
 
 export const readAllPlantas = async (req: Request, res: Response) => {
   try {
-    const plantas = await PlantaRepository.findAllPlantas();
+    // filtros opcionais da URL: /plantas?luminosidade=SOMBRA&petFriendly=true
+    const { luminosidade, petFriendly } = req.query;
+    const where: Prisma.PlantaWhereInput = {};
+
+    if (luminosidade !== undefined) {
+      if (typeof luminosidade !== "string" || !LUMINOSIDADES.includes(luminosidade)) {
+        return res.status(400).json({
+          message: "luminosidade deve ser SOMBRA, MEIA_SOMBRA ou SOL_PLENO.",
+        });
+      }
+      where.luminosidade = luminosidade as Luminosidade;
+    }
+
+    if (petFriendly !== undefined) {
+      // na URL tudo chega como texto: "true" não é o true booleano, então comparamos o texto
+      if (petFriendly !== "true" && petFriendly !== "false") {
+        return res.status(400).json({ message: "petFriendly deve ser true ou false." });
+      }
+      where.petFriendly = petFriendly === "true";
+    }
+
+    const plantas = await PlantaRepository.findAllPlantas(where);
 
     return res.status(200).json(plantas);
   } catch (error) {
@@ -97,7 +119,7 @@ export const readPlantaById = async (req: Request, res: Response) => {
 
     const planta = await PlantaRepository.findPlantaById(id);
 
-    // 404 Not Found: o id não existe
+    // 404 not found: o id não existe
     if (!planta) {
       return res.status(404).json({ message: "Planta não encontrada." });
     }
