@@ -41,6 +41,12 @@ const validarPlanta = (dados: any, exigirTodos: boolean): string | null => {
   return null;
 };
 
+// O id chega da URL como texto. Devolve o número, ou null se não for um inteiro +.
+const parseId = (valor: string): number | null => {
+  const id = Number(valor);
+  return Number.isInteger(id) && id > 0 ? id : null;
+};
+
 export const createPlanta = async (req: Request, res: Response) => {
   try {
     const dados = req.body ?? {};
@@ -67,5 +73,38 @@ export const createPlanta = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erro ao criar planta." });
+  }
+};
+
+export const readAllPlantas = async (req: Request, res: Response) => {
+  try {
+    const plantas = await PlantaRepository.findAllPlantas();
+
+    return res.status(200).json(plantas);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao buscar plantas." });
+  }
+};
+
+export const readPlantaById = async (req: Request, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+
+    if (id === null) {
+      return res.status(400).json({ message: "id inválido." });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+
+    // 404 Not Found: o id não existe
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    return res.status(200).json(planta);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao buscar planta." });
   }
 };
