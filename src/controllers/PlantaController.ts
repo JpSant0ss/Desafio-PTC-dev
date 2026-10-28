@@ -108,3 +108,69 @@ export const readPlantaById = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Erro ao buscar planta." });
   }
 };
+
+export const updatePlanta = async (req: Request, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+
+    if (id === null) {
+      return res.status(400).json({ message: "id inválido." });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+
+    // 404 not found: o id não existe
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    const dados = req.body ?? {};
+
+    // exigirTodos = false: no PATCH nenhum campo é obrigatório
+    const erro = validarPlanta(dados, false);
+    if (erro) {
+      return res.status(400).json({ message: erro });
+    }
+
+    // campos não enviados ficam undefined e o Prisma ignora na atualização
+    // listar campo a campo impede que alguém altere id, createdAt etc
+    const plantaAtualizada = await PlantaRepository.updatePlanta(id, {
+      nome: dados.nome,
+      especie: dados.especie,
+      preco: dados.preco,
+      estoque: dados.estoque,
+      luminosidade: dados.luminosidade,
+      petFriendly: dados.petFriendly,
+      regaACadaDias: dados.regaACadaDias,
+    });
+
+    return res.status(200).json(plantaAtualizada);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao atualizar planta." });
+  }
+};
+
+export const deletePlanta = async (req: Request, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+
+    if (id === null) {
+      return res.status(400).json({ message: "id inválido." });
+    }
+
+    const planta = await PlantaRepository.findPlantaById(id);
+
+    if (!planta) {
+      return res.status(404).json({ message: "Planta não encontrada." });
+    }
+
+    await PlantaRepository.deletePlanta(id);
+
+    // 204 no content: deu certo e não há nada para devolver
+    return res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao deletar planta." });
+  }
+};
