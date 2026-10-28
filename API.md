@@ -16,6 +16,8 @@ yarn
 docker compose up -d --build
 yarn migration
 ```
+**Porta 5432 já em uso?** Se você tem outro PostgreSQL rodando na máquina (local ou em outro container), o `yarn migration` pode falhar com `P1000: Authentication failed`. Troque `DATABASE_PORT` no `.env` (ex.: `5433`) **antes** de subir o Docker.
+
 
 A API fica em `http://localhost:3001`.
 
