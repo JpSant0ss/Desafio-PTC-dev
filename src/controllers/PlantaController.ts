@@ -79,11 +79,13 @@ export const createPlanta = async (req: Request, res: Response) => {
 
 export const readAllPlantas = async (req: Request, res: Response) => {
   try {
-    // filtros opcionais da URL: /plantas?luminosidade=SOMBRA&petFriendly=true
-    const { luminosidade, petFriendly } = req.query;
+    // Filtros opcionais da URL: /plantas?luminosidade=SOMBRA&petFriendly=true&nome=costela&ordem=preco
+    const { luminosidade, petFriendly, nome, ordem } = req.query;
     const where: Prisma.PlantaWhereInput = {};
+    let orderBy: Prisma.PlantaOrderByWithRelationInput | undefined;
 
     if (luminosidade !== undefined) {
+      // typeof string barra casos como ?luminosidade=A&luminosidade=B (que chega como lista)
       if (typeof luminosidade !== "string" || !LUMINOSIDADES.includes(luminosidade)) {
         return res.status(400).json({
           message: "luminosidade deve ser SOMBRA, MEIA_SOMBRA ou SOL_PLENO.",
@@ -93,14 +95,30 @@ export const readAllPlantas = async (req: Request, res: Response) => {
     }
 
     if (petFriendly !== undefined) {
-      // na URL tudo chega como texto: "true" não é o true booleano, então comparamos o texto
+      // Na URL tudo chega como texto: "true" não é o boolean true, então comparamos o texto
       if (petFriendly !== "true" && petFriendly !== "false") {
         return res.status(400).json({ message: "petFriendly deve ser true ou false." });
       }
       where.petFriendly = petFriendly === "true";
     }
 
-    const plantas = await PlantaRepository.findAllPlantas(where);
+    // bonus: busca por nome e que aceita só um pedaço do nome
+    if (nome !== undefined) {
+      if (typeof nome !== "string" || nome.trim() === "") {
+        return res.status(400).json({ message: "nome deve ser um texto não vazio." });
+      }
+      where.nome = { contains: nome.trim(), mode: "insensitive" };
+    }
+
+    // bonus: ordenação crescente por preco ou por nome
+    if (ordem !== undefined) {
+      if (ordem !== "preco" && ordem !== "nome") {
+        return res.status(400).json({ message: "ordem deve ser preco ou nome." });
+      }
+      orderBy = { [ordem]: "asc" };
+    }
+
+    const plantas = await PlantaRepository.findAllPlantas(where, orderBy);
 
     return res.status(200).json(plantas);
   } catch (error) {
@@ -250,5 +268,17 @@ export const readValorTotalEstoque = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erro ao calcular o valor do estoque." });
+  }
+};
+
+// bonus: plantas com estoque zero
+export const readPlantasEsgotadas = async (req: Request, res: Response) => {
+  try {
+    const plantas = await PlantaRepository.findAllPlantas({ estoque: 0 });
+
+    return res.status(200).json(plantas);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao buscar plantas esgotadas." });
   }
 };

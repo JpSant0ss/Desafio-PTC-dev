@@ -15,12 +15,13 @@ routes.get("/users/:id", UserController.readUserById);
 routes.patch("/users/:id", UserController.updateUser);
 routes.delete("/users/:id", UserController.deleteUser);
 
-//crud de plantas
+// CRUD de plantas
 routes.post("/plantas", PlantaController.createPlanta);
 routes.get("/plantas", PlantaController.readAllPlantas);
+routes.get("/plantas/esgotadas", PlantaController.readPlantasEsgotadas);
+routes.get("/plantas/estoque/valor-total", PlantaController.readValorTotalEstoque);
 routes.get("/plantas/:id", PlantaController.readPlantaById);
 routes.patch("/plantas/:id", PlantaController.updatePlanta);
 routes.delete("/plantas/:id", PlantaController.deletePlanta);
 routes.post("/plantas/:id/venda", PlantaController.sellPlanta);
-routes.get("/plantas/estoque/valor-total", PlantaController.readValorTotalEstoque);
 export default routes;
