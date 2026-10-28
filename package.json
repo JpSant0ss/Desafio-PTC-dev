@@ -9,6 +9,7 @@
     "migration": "cross-env DATABASE_HOST=localhost prisma migrate dev",
     "migration:deploy": "prisma migrate deploy",
     "studio": "cross-env DATABASE_HOST=localhost prisma studio",
+    "seed": "ts-node --transpile-only prisma/seed.ts",
     "typecheck": "tsc --noEmit",
     "build": "swc src --strip-leading-paths --out-dir dist",
     "start": "node dist/server.js",
@@ -29,6 +30,7 @@
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
     "prisma": "5.22.0",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.6.3"
