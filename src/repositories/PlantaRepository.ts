@@ -32,3 +32,13 @@ export const deletePlanta = async (id: number) => {
         where: { id: id }
     });
 };
+
+// desconta o estoque só se ainda houver quantidade suficiente
+// devolve quantas linhas foram alteradas: 1 = vendeu, 0 = estoque insuficiente.
+export const decrementEstoque = async (id: number, quantidade: number) => {
+    const resultado = await prisma.planta.updateMany({
+        where: { id: id, estoque: { gte: quantidade } },
+        data: { estoque: { decrement: quantidade } },
+    });
+    return resultado.count;
+};
